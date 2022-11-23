@@ -14,6 +14,11 @@ the total interaction potential curve (DLVO theory).
     The input parameters (sphere size, surface potential, ionic 
 concenctraion, etc.) can be modified as desired/required.
 
+Software required
+- MATLAB
+- MATLAB Phased Array System Toolbox
+- MATLAB Partial Differential Equation Toolbox
+
 Important outputs
 - u_array_kT : electrostatic repulsion (units of kT)
 - w_v_kT : van der Waals attraction (units of kT)
