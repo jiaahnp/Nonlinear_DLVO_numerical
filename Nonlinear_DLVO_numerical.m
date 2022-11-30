@@ -4,36 +4,40 @@ Author: Jia-Ahn Pan
 Date modified: 11/29/2022
 
 Overview: 
-This program first numerically solves the full, non-linear Poisson-Bolzmann 
+This program numerically solves the full, non-linear Poisson-Bolzmann 
 equations for two charged spheres in an ionic solution of equal valency (e.g. NaCl),
 assuming constant potential or constant charge at the particle surface.
 It compares the computed results with several approximations: (1) Derjaguin (DA) + 
 linear superposition (SLA), (2) DA + linear Poisson Boltzmann (LPB) with constant surface potential,
 and (3) DA + LPB with constant surface charge. The computed electrostatic
 repulsion is then combined with van der Waals attractive forces to obtain
-the total interaction potential curve (DLVO theory).
-    The input parameters (sphere size, surface potential, ionic 
-concenctration, etc.) can be modified as desired/required.
+the total interaction potential curve (DLVO theory) for both constant potential
+and constant charge boundary conditions.
+    The input user parameters (sphere size, surface potential, ionic 
+concenctration, etc.) can be modified as desired/required. The simulation
+parameters can also be modified but with caution.
 
 Software and toolboxes required
 - MATLAB
 - MATLAB Phased Array System Toolbox
 - MATLAB Partial Differential Equation Toolbox
 
-Important outputs
-- u_array_kT : electrostatic repulsion (units of kT)
-- w_v_kT : van der Waals attraction (units of kT)
-- w_total_kT : total interaction energy (units of kT)
+Intermediate functions (at the end of this script)
+- PoisBolzSolver_TwoSpheres_potential
+- forces_two_spheres_potential
+- PoisBolzSolver_TwoSpheres_charge
+- forces_two_spheres_charge
+
 %}
 
 
-%% User parameters (modify freely based on system)
-r_nm = 1.5;%32.8792; % radius of sphere in nanometers
-psi_0_mV = 50;%102.7186; % surface potential in mV
+%% User parameters (modify freely based on system of study)
+r_nm = 1.5; % radius of sphere in nm
+psi_0_mV = 50; % surface potential in mV
 c_0_molar = 0.001; % ionic concentration in molarity (M), e.g. c_0_molar = 1 for 1M NaCl
 z = 1; %z = ionic charge of cation = ionic charge of anion (must be equal)
 epsilon_r = 36.7; % relative permittivity (dielectric constant) of solvent
-A = 6.22e-20; % Hamaker constant of the colloidal sphere
+A = 6.22e-20; % Hamaker constant of the colloidal sphere, e.g., 6.22e-20 for CdSe
 T = 298; % temperature in Kelvin
 
 %% Constants and intermediate variables
@@ -44,8 +48,8 @@ N_A = 6.02214076e23;
 
 %intermediate variables
 kT = physconst('Boltzmann')*T;
-c_0 = c_0_molar*N_A*1e3; %conc of ions in nunmber/m3 = mol/L*atoms/mol *1000 L/m^3 0.003846
-r = r_nm*1e-9; %redius in meters
+c_0 = c_0_molar*N_A*1e3; %conc of ion pairs in 1/m3
+r = r_nm*1e-9; %radius in meters
 
 kappa = ((2*z^2*e^2*c_0)/(epsilon_r*epsilon_0*kT))^(0.5); % 1/debye length
 r_red = r*kappa; %reduced sphere radius
@@ -53,32 +57,30 @@ psi_0_red = psi_0_mV*e/1e3/kT; %reduced surface potential
 
 %% Simulation parameters (modify with caution)
 h_closest_nm = 0.01/kappa*1e9; %closest NC surface-to-surface separation in nanometers
-h_farthest_nm = 5/kappa*1e9; %20; %farthest NC surface-to-surface separation in nanometers
+h_farthest_nm = 5/kappa*1e9; %farthest NC surface-to-surface separation in nanometers
 %IMPORTANT: to get an accurate value of the potential (u_array_kT),
 %h_farthest_nm needs to be big enough such that the force (f) is close
-%to zero at this point. This can be checked in the one of the figures.
+%to zero at this point. This can be checked in Figure 1.
 h_points_nm = 50; % number of points to sample between closest and farthest surface separation
-mmax = 0.03; %target maximum mesh edge length, e.g. 0.03 (smaller better but longer time)
+% can increase h_points_nm if want smaller data spacings
+mmax = 0.05; %target maximum mesh edge length, e.g. 0.03 (smaller better but longer time)
 % Note: Discontinuities/uneveness in the force curve can be observed if
 % the mmax value used is too large. Reduce mmax if this is observed
 
-h_array_nm = logspace(log10(h_closest_nm),log10(h_farthest_nm),h_points_nm)'; % array of surface distances between two spheres to be used (in nm)
+h_array_nm = logspace(log10(h_closest_nm),log10(h_farthest_nm),h_points_nm)'; % array of surface distances (nm)
 h_array_m = h_array_nm*1e-9;
 h_array = h_array_nm.*1e-9.*kappa; %reduced surface distances
 
-%% Estimate surface charge density from surface potential by solving PB equation and using Gauss law (differential form)
-h_red = r_red*10;
+%% Estimate surface charge density 
+% The surface charge density is estimated from the surface potential by 
+% solving PB equation for an isolated sphere using Gauss law (differential form)
+
+h_red = r_red*10; %use far enough distance to assume isolation
 disp("Calculating surface charge density from potential...")
 [f2,u,eta_thetazero,u_thetazero,charge_0_red] = forces_two_spheres_potential(h_red,r_red,psi_0_red,0.01);
 charge_C_m2 = charge_0_red/e*epsilon_0*epsilon_r*kappa*kT;
-charge_e_nm2 = charge_C_m2/e/(1e9)^2
+charge_e_nm2 = charge_C_m2/e/(1e9)^2;
 
-% figure
-% plot(eta_thetazero,u_thetazero)
-% 
-% u_thetazero_der = gradient(u_thetazero, eta_thetazero);
-% figure
-% plot(eta_thetazero,u_thetazero_der)
 %% Electrostatics - Numerical calculation (exact)
 [u_array_potential, f_array_potential] = PoisBolzSolver_TwoSpheres_potential(r_red, psi_0_red, h_array, mmax);
 [u_array_charge, f_array_charge] = PoisBolzSolver_TwoSpheres_charge(r_red, psi_0_red, charge_0_red, h_array, mmax);
@@ -95,11 +97,8 @@ plot(h_array, f_array_potential,'-diamond','Color',[0.6275,0.6431,0.8706])
 plot(h_array, u_array_potential, '-diamond','Color',[0.27,0.3216,1])
 plot(h_array, f_array_charge,'-square','Color',[0.9098, 0.6549, 0.6549])
 plot(h_array, u_array_charge, '-square','Color',[0.9098,0.2275, 0.2275])
-
-% plot(h_array, f_array_charge,'-*', h_array, u_array_charge, '-x')
 hold off
 
-%ttle = title('Electrostatic force and energy between two colloidal spheres');
 ttle = title({'Electrostatic force and energy between two colloidal spheres',...
     strcat('(Reduced radius = \kappar = ',num2str(r_red),'; Reduced potential = e\psi_0/kT = ',num2str(psi_0_red),...
     ')')});
@@ -110,10 +109,9 @@ ylabel('Interaction force or energy (reduced units)', 'FontSize', labelsize)
 lgd = legend('Constant Potential (Force)','Constant Potential (Energy)','Constant Charge (Force)','Constant Charge (Energy)');
 lgd.FontSize = 12;
 
-
-%% Electrostatics - Two analytical approximations
+%% Electrostatics - Analytical approximations
 h_array_ana_m = (0.09e-9:0.01e-9:40e-9);
-gamma = tanh(z*e*psi_0_mV/1e3/(4*kT)); %0.3709 
+gamma = tanh(z*e*psi_0_mV/1e3/(4*kT)); 
 
 %electrostatic double layer potential Derjaguin + linear superpos. (LSA) - constant potential
 w_e = 64*pi*kT*r*c_0*gamma^2/kappa^2*exp(-kappa*h_array_ana_m);
@@ -126,12 +124,11 @@ w_e_HHF_potential_kT = w_e_HHF_potential/kT;
 %electrostatic double layer potential HHF approx (Derjaguin + linearized PB (LPB) - constant charge) 
 w_e_HHF_charge = -2*pi*epsilon_r*epsilon_0*r*(psi_0_mV/1e3)^2*(log(1-exp(-kappa*h_array_ana_m)));
 w_e_HHF_charge_kT = w_e_HHF_charge/kT;
-% figure
-% plot(d, w_e)
+
 
 %% Van der Waals interactions (exact analytical solution)
 w_v = -A./6.*(2.*r.^2./h_array_m./(4.*r+h_array_m) + 2.*r.^2./(2.*r+h_array_m).^2 + log(h_array_m.*(4.*r+h_array_m)./(2.*r+h_array_m).^2));
-w_v_kT = w_v/kT; %get in terms of kT and times 6 for number corrd in random close pack
+w_v_kT = w_v/kT; %get in terms of kT 
 %% Plot electrostatic repulsion: calculated vs approximations 
 figure
 hold on
@@ -160,7 +157,7 @@ hold off
 u_dlvo_potential_kT = u_array_potential_kT+w_v_kT; %for numerical with vdw
 
 figure
-plot(h_array_m*1e9, w_v_kT,'-', h_array_m*1e9,u_array_potential_kT,'-s', h_array_m*1e9, u_dlvo_potential_kT,'-+')
+plot(h_array_m*1e9, w_v_kT,'-', h_array_m*1e9,u_array_potential_kT,'-s', h_array_m*1e9, u_dlvo_potential_kT,'-o')
 ttle = title({'DLVO interaction energy (constant potential)',...
     strcat('r = ',num2str(r*1e9),' nm, \psi_0 = ',num2str(psi_0_mV),...
     ' mV, c_0 =',num2str(c_0_molar), ' M, T=', num2str(T), ' K, \kappa^{-1} =',num2str(1e9/kappa),' nm')});
@@ -179,7 +176,7 @@ hold off
 u_dlvo_charge_kT = u_array_charge_kT+w_v_kT; %for numerical with vdw
 
 figure
-plot(h_array_m*1e9, w_v_kT,'-', h_array_m*1e9,u_array_charge_kT,'-s', h_array_m*1e9, u_dlvo_charge_kT,'-+')
+plot(h_array_m*1e9, w_v_kT,'-', h_array_m*1e9,u_array_charge_kT,'-s', h_array_m*1e9, u_dlvo_charge_kT,'-o')
 ttle = title({'DLVO interaction energy (constant charge)',...
     strcat('r = ',num2str(r*1e9),' nm, \sigma_0 = ', num2str(charge_C_m2), ...
     ' C/m^2, \psi^{isolated}_0\approx',num2str(psi_0_mV),...
@@ -198,7 +195,7 @@ hold off
 %% Intermediate functions
 function [u_array, f_array] = PoisBolzSolver_TwoSpheres_potential(r_red, psi_0_red, h_array, mmax)
 %{
-Function: PoisBolzSolver_TwoSpheres
+Function: PoisBolzSolver_TwoSpheres_potential
 
 Evaluate forces at various separations and calculate potential, U
 
@@ -219,14 +216,7 @@ Output
     - u_array (reduced potential between the spheres as a function of h_array)
     - f_array (reduced force between the spheres as a function of h_array)
 
-PoisBolzSolver_TwoSpheres_Part2 can be used after this program to compare these
-results to numerical approximations as well as to calculate the total DLVO
-potential by including van der Waals attractive forces.
 %}
-% r_red = 6.2516; % reduced particle radius, r_red = (radius(m))*kappa(Debye length) 0.387696
-% psi_0_red = 4; %Reduced potential: psi_0_red = (Surface potential (V))*e/kT 
-% h_array = (0.1:0.1:10)'; %array of surface-to-surface distance
-% mmax = 0.05; %target maximum mesh edge length, e.g. 0.03 (smaller better but longer time)
 
 f_array = zeros(size(h_array)); %array of forces with same size as h_array
 
@@ -245,25 +235,12 @@ u_array = flipud(u_array); %flip U back to proper
 end
 
 function [f2,u,eta_thetazero,u_thetazero,charge_reduced] = forces_two_spheres_potential(h,r,psi_0,mmax)
-
-    %Important manipulated variables 
-    h; %surface separation, normalized by debye length, e.g. 1
-    r; %particle radius, normalized by debye length e.g. 1
-    psi_0; %reduced potential on particle surface (roughly *25meV) e.g. 4
-
-   % Mesh and model solver parameters
-    mmax; %target maximum mesh edge length, e.g. 0.03
-    % model.SolverOptions.RelativeTolerance = 1.0e-7;
-    % model.SolverOptions.AbsoluteTolerance = 1.0e-7;
-    % model.SolverOptions.ResidualTolerance = 1.0e-7;
-    % model.SolverOptions.MaxIterations = 30;
-
-    %intermediate parameters
+    
+%intermediate parameters
     theta_0 = pi;
     cent_to_cent = h+2*r; %center to center distance
     u0 = psi_0; %initial guess
 
-   
     % constants for cartesian to bipolar transformation
     eta_0 = acosh(1+(h/(2*r)));
     c_0 = (sqrt(cent_to_cent^2-4*r^2))/2; % or c_0 = r*sinh(eta_0)
@@ -272,14 +249,6 @@ function [f2,u,eta_thetazero,u_thetazero,charge_reduced] = forces_two_spheres_po
     a = 0;
     c = '-sin(y)./(cosh(x)-cos(y))'; %x is eta, y is theta
     f = strcat(num2str(c_0^2),'.*sin(y).*sinh(u)./(cosh(x)-cos(y)).^3'); 
-
-%     c = @(location,state)-sin(location.y)/(cosh(location.x)-cos(location.y));
-    
-%     function c = ccoeff(location,state)
-%         c = -sin(location.y)/(cosh(location.x)-cos(location.y));
-%     end
-
-%     f = @(location, state) c_0^2*sin(location.y)*sinh(state.u)/(cosh(location.x)-cos(location.y))^3;
 
     % Create model, modify and solve
     %create model instance
@@ -314,14 +283,6 @@ function [f2,u,eta_thetazero,u_thetazero,charge_reduced] = forces_two_spheres_po
     %run the numerical solver pdenonlin to get the potential u
     u = pdenonlin(model,c,a,f,'U0',u0,'Jacobian','full'); 
     
-%new version with solvpde so that can use quadratic
-%     specifyCoefficients(model,"m",0,...
-%                           "d",0,...
-%                           "c",@c,...
-%                           "a",0,...
-%                           "f",f);
-%     u = solvepde(model);
-
     %extract the coordinates for the potential
     eta = model.Mesh.Nodes(1,:)';
     theta = model.Mesh.Nodes(2,:)';
@@ -383,13 +344,31 @@ function [f2,u,eta_thetazero,u_thetazero,charge_reduced] = forces_two_spheres_po
 end
 
 function [u_array, f_array] = PoisBolzSolver_TwoSpheres_charge(r_red, psi_0_red, charge_0_red, h_array, mmax)
-% Evaluate forces at various separations and calculate potential, U for
-% constant charge
+%{
+Function: PoisBolzSolver_TwoSpheres_charge
 
-% r_red = 6.2516; % reduced particle radius, r_red = (radius(m))*kappa(Debye length) 0.387696
-% psi_0_red = 4; %Reduced potential: psi_0_red = (Surface potential (V))*e/kT 
-% h_array = (0.1:0.1:10)'; %array of surface-to-surface distance
-% mmax = 0.05; %target maximum mesh edge length, e.g. 0.03 (smaller better but longer time)
+Evaluate forces at various separations and calculate potential, U
+
+Overview: This function numerically solves the full, non-linear Poisson-Bolzmann 
+equations for two charged spheres in an ionic solution of equal valency (e.g. NaCl),
+assuming constant charhe at the particle surface. It gives the (reduced) potential 
+and (reduced) force curves as a function of the (reduced)
+surface-to-surface distance between the spheres.
+
+Input
+    - r_red (reduced radius)= (radius(m))*kappa(Debye length) 
+    - psi_0_red (reduced potential): psi_0_red = (Surface potential (V))*e/kT 
+    - charge_0_red (reduced charge)
+    - h_array (array of surface distance to be evaluated) Note: to get an
+    accurate value for the potential (u_array), h_array needs to be
+    evaluated to a distance far enough that the force, f is close to zero
+    - mmax (mesh density)
+Output
+    - u_array (reduced potential between the spheres as a function of h_array)
+    - f_array (reduced force between the spheres as a function of h_array)
+
+%}
+
 
 f_array = zeros(size(h_array)); %array of forces with same size as h_array
 
@@ -408,24 +387,11 @@ u_array = flipud(u_array); %flip U back to proper
 end
 
 function [f2] = forces_two_spheres_charge(h,r,psi_0,charge_0_red, mmax)
-    %Important manipulated variables 
-    h; %surface separation, normalized by debye length, e.g. 1
-    r; %particle radius, normalized by debye length e.g. 1
-    psi_0; %reduced potential on particle surface (roughly *25meV) e.g. 4
-
-   % Mesh and model solver parameters
-    mmax; %target maximum mesh edge length, e.g. 0.03
-    % model.SolverOptions.RelativeTolerance = 1.0e-7;
-    % model.SolverOptions.AbsoluteTolerance = 1.0e-7;
-    % model.SolverOptions.ResidualTolerance = 1.0e-7;
-    % model.SolverOptions.MaxIterations = 30;
-
     %intermediate parameters
     theta_0 = pi;
     cent_to_cent = h+2*r; %center to center distance
     u0 = psi_0; %initial guess
 
-   
     % constants for cartesian to bipolar transformation
     eta_0 = acosh(1+(h/(2*r)));
     c_0 = (sqrt(cent_to_cent^2-4*r^2))/2; % or c_0 = r*sinh(eta_0)
@@ -454,12 +420,6 @@ function [f2] = forces_two_spheres_charge(h,r,psi_0,charge_0_red, mmax)
     % pdegplot(model,'EdgeLabels','on');
     % axis equal
 
-    %boundary conditions
-    % constant chage boundary condition
-    % ref: https://www.mathworks.com/help/pde/ug/boundary-object-with-nonconstant-conditions.html
-%     e = 1.60217662e-19;
-%     charge_Cm2 = 0.08712;
-%     charge_reduced = charge_Cm2*e/(epsilon_0*epsilon_r*kappa*kT);
     function bc = bcfunc(location, state)
         bc = charge_0_red*r*sinh(eta_0)./(cosh(eta_0) - cos(location.y));
     end
