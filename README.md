@@ -20,7 +20,6 @@ parameters can also be modified but with caution.
 
 Software and toolboxes required
 - MATLAB
-- MATLAB Phased Array System Toolbox
 - MATLAB Partial Differential Equation Toolbox
 
 Intermediate functions (at the end of this script)
