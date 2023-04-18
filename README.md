@@ -1,7 +1,9 @@
 # Nonlinear_DLVO_numerical
 
 Script: Nonlinear_DLVO_numerical.m
+
 Author: Jia-Ahn Pan
+
 Date modified: 4/18/2023
 
 Overview: 
