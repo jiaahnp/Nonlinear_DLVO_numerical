@@ -14,7 +14,7 @@ repulsion is then combined with van der Waals attractive forces to obtain
 the total interaction potential curve (DLVO theory) for both constant potential
 and constant charge boundary conditions.
     The input user parameters (sphere size, surface potential, ionic 
-concenctration, etc.) can be modified as desired/required. The simulation
+concenctration, etc.) can be     modified as desired/required. The simulation
 parameters can also be modified but with caution.
 
 Software and toolboxes required
