@@ -1,12 +1,12 @@
 %{ 
 Script: Nonlinear_DLVO_numerical.m
 Author: Jia-Ahn Pan
-Date modified: 11/29/2022
+Date modified: 4/18/2023
 
 Overview: 
 This program numerically solves the full, non-linear Poisson-Bolzmann 
 equations for two charged spheres in an ionic solution of equal valency (e.g. NaCl),
-assuming constant potential or constant charge at the particle surface.
+assuming either constant potential or constant charge at the particle surface.
 It compares the computed results with several approximations: (1) Derjaguin (DA) + 
 linear superposition (SLA), (2) DA + linear Poisson Boltzmann (LPB) with constant surface potential,
 and (3) DA + LPB with constant surface charge. The computed electrostatic
@@ -14,7 +14,7 @@ repulsion is then combined with van der Waals attractive forces to obtain
 the total interaction potential curve (DLVO theory) for both constant potential
 and constant charge boundary conditions.
     The input user parameters (sphere size, surface potential, ionic 
-concenctration, etc.) can be     modified as desired/required. The simulation
+concenctration, etc.) can be modified as desired/required. The simulation
 parameters can also be modified but with caution.
 
 Software and toolboxes required
@@ -31,7 +31,7 @@ Intermediate functions (at the end of this script)
 
 
 %% User parameters (modify freely based on system of study)
-r_nm = 1.5; % radius of sphere in nm
+r_nm = 2; % radius of sphere in nm
 psi_0_mV = 50; % surface potential in mV
 c_0_molar = 0.001; % ionic concentration in molarity (M), e.g. c_0_molar = 1 for 1M NaCl
 z = 1; %z = ionic charge of cation = ionic charge of anion (must be equal)
@@ -90,23 +90,25 @@ u_array_potential_kT = u_array_potential*a;
 u_array_charge_kT = u_array_charge*a;
 
 %% Plot calculated force and energy curves for numerical results
-figure
-hold on
-plot(h_array, f_array_potential,'-diamond','Color',[0.6275,0.6431,0.8706])
-plot(h_array, u_array_potential, '-diamond','Color',[0.27,0.3216,1])
-plot(h_array, f_array_charge,'-square','Color',[0.9098, 0.6549, 0.6549])
-plot(h_array, u_array_charge, '-square','Color',[0.9098,0.2275, 0.2275])
-hold off
+% Figure used to check quality of simulation
 
-ttle = title({'Electrostatic force and energy between two colloidal spheres',...
-    strcat('(Reduced radius = \kappar = ',num2str(r_red),'; Reduced potential = e\psi_0/kT = ',num2str(psi_0_red),...
-    ')')});
-ttle.FontSize = 12;
-labelsize = 12;
-xlabel('Surface separation (\kappa^{-1}h)', 'FontSize', labelsize)
-ylabel('Interaction force or energy (reduced units)', 'FontSize', labelsize)
-lgd = legend('Constant Potential (Force)','Constant Potential (Energy)','Constant Charge (Force)','Constant Charge (Energy)');
-lgd.FontSize = 12;
+% figure
+% hold on
+% plot(h_array, f_array_potential,'-diamond','Color',[0.6275,0.6431,0.8706])
+% plot(h_array, u_array_potential, '-diamond','Color',[0.27,0.3216,1])
+% plot(h_array, f_array_charge,'-square','Color',[0.9098, 0.6549, 0.6549])
+% plot(h_array, u_array_charge, '-square','Color',[0.9098,0.2275, 0.2275])
+% hold off
+% 
+% ttle = title({'Electrostatic force and energy between two colloidal spheres',...
+%     strcat('(Reduced radius = \kappar = ',num2str(r_red),'; Reduced potential = e\psi_0/kT = ',num2str(psi_0_red),...
+%     ')')});
+% ttle.FontSize = 12;
+% labelsize = 12;
+% xlabel('Surface separation (\kappa^{-1}h)', 'FontSize', labelsize)
+% ylabel('Interaction force or energy (reduced units)', 'FontSize', labelsize)
+% lgd = legend('Constant Potential (Force)','Constant Potential (Energy)','Constant Charge (Force)','Constant Charge (Energy)');
+% lgd.FontSize = 12;
 
 %% Electrostatics - Analytical approximations
 h_array_ana_m = (0.09e-9:0.01e-9:40e-9);
@@ -131,6 +133,7 @@ w_v_kT = w_v/kT; %get in terms of kT
 %% Plot electrostatic repulsion: calculated vs approximations 
 figure
 hold on
+set(gca,'DefaultLineLineWidth',2)
 plot(h_array_m*1e9,u_array_potential_kT, '-diamond','Color',[0.27,0.3216,1])%, 'MarkerSize', 3)
 plot(h_array_m*1e9,u_array_charge_kT, '-square','Color',[0.9098,0.2275, 0.2275])%, 'MarkerSize', 3)
 
@@ -138,7 +141,7 @@ plot(h_array_ana_m*1e9,w_e_kT)
 plot(h_array_ana_m*1e9,w_e_HHF_potential_kT)
 plot(h_array_ana_m*1e9,w_e_HHF_charge_kT)
 
-ttle = title({'Interaction energy between two colloidal spheres',...
+ttle = title({'Electrostatic double layer interaction energy between two colloidal spheres',...
     strcat('(r = ',num2str(r*1e9),' nm, \psi_0 = ',num2str(psi_0_mV),...
     ' mV, \kappa^{-1} =',num2str(1e9/kappa),' nm)')});
 ttle.FontSize = 12;
@@ -148,7 +151,7 @@ ylabel('Interaction energy (kT)', 'FontSize', labelsize)
 %xlim([0 20])
 %ylim([0 7])
 lgd = legend('Numerical (constant potential)','Numerical (constant charge)',...
-   'Approx. - DA + LSA','Approx. - DA + LPB (constant potential)','Approx. - DA + LPB (constant charge)');
+   'Derjaguin + linear superposition approx. (constant potential)','Derjaguin + linear Poisson-Boltzmann approx. (constant potential)','Derjaguin + linear Poisson-Bolzmann (constant charge)');
 lgd.FontSize = 12;
 hold off
 
@@ -156,8 +159,12 @@ hold off
 u_dlvo_potential_kT = u_array_potential_kT+w_v_kT; %for numerical with vdw
 
 figure
+hold on
+set(gca,'DefaultLineLineWidth',2)
+
 plot(h_array_m*1e9, w_v_kT,'-', h_array_m*1e9,u_array_potential_kT,'-s', h_array_m*1e9, u_dlvo_potential_kT,'-o')
-ttle = title({'DLVO interaction energy (constant potential)',...
+
+ttle = title({'Numerical DLVO interaction energy (constant potential)',...
     strcat('r = ',num2str(r*1e9),' nm, \psi_0 = ',num2str(psi_0_mV),...
     ' mV, c_0 =',num2str(c_0_molar), ' M, T=', num2str(T), ' K, \kappa^{-1} =',num2str(1e9/kappa),' nm')});
 ttle.FontSize = 12;
@@ -175,8 +182,10 @@ hold off
 u_dlvo_charge_kT = u_array_charge_kT+w_v_kT; %for numerical with vdw
 
 figure
+hold on
+set(gca,'DefaultLineLineWidth',2)
 plot(h_array_m*1e9, w_v_kT,'-', h_array_m*1e9,u_array_charge_kT,'-s', h_array_m*1e9, u_dlvo_charge_kT,'-o')
-ttle = title({'DLVO interaction energy (constant charge)',...
+ttle = title({'Numerical DLVO interaction energy (constant charge)',...
     strcat('r = ',num2str(r*1e9),' nm, \sigma_0 = ', num2str(charge_C_m2), ...
     ' C/m^2, \psi^{isolated}_0\approx',num2str(psi_0_mV),...
     ' mV, c_0 =',num2str(c_0_molar), ' M, T=', num2str(T), ' K, \kappa^{-1} =',num2str(1e9/kappa),' nm')});
