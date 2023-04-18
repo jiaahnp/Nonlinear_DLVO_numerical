@@ -1,16 +1,16 @@
 %{ 
 Script: Nonlinear_DLVO_numerical.m
 Author: Jia-Ahn Pan
-Date modified: 4/18/2023
+Date modified: 4/18/2022
 
 Overview: 
 This program numerically solves the full, non-linear Poisson-Bolzmann 
 equations for two charged spheres in an ionic solution of equal valency (e.g. NaCl),
-assuming either constant potential or constant charge at the particle surface.
+assuming either constant potential (CP) or constant charge (CC) at the particle surface.
 It compares the computed results with several approximations: (1) Derjaguin (DA) + 
-linear superposition (SLA), (2) DA + linear Poisson Boltzmann (LPB) with constant surface potential,
-and (3) DA + LPB with constant surface charge. The computed electrostatic
-repulsion is then combined with van der Waals attractive forces to obtain
+linear superposition (SLA) with constant surface potential, (2) DA + linear Poisson Boltzmann (LPB) 
+with constant surface potential,and (3) DA + LPB with constant surface charge. The computed
+electrostatic repulsion is then combined with van der Waals attractive forces to obtain
 the total interaction potential curve (DLVO theory) for both constant potential
 and constant charge boundary conditions.
     The input user parameters (sphere size, surface potential, ionic 
