@@ -31,7 +31,7 @@ Intermediate functions (at the end of this script)
 
 
 %% User parameters (modify freely based on system of study)
-r_nm = 2; % radius of sphere in nm
+r_nm = 5; % radius of sphere in nm
 psi_0_mV = 50; % surface potential in mV
 c_0_molar = 0.001; % ionic concentration in molarity (M), e.g. c_0_molar = 1 for 1M NaCl
 z = 1; %z = ionic charge of cation = ionic charge of anion (must be equal)
@@ -111,7 +111,9 @@ u_array_charge_kT = u_array_charge*a;
 % lgd.FontSize = 12;
 
 %% Electrostatics - Analytical approximations
-h_array_ana_m = (0.09e-9:0.01e-9:40e-9);
+% h_array_ana_m = (0.09e-9:0.01e-9:40e-9);
+h_array_ana_m = (h_closest_nm*1e-9:0.01e-9:h_farthest_nm*1e-9);
+
 gamma = tanh(z*e*psi_0_mV/1e3/(4*kT)); 
 
 %electrostatic double layer potential Derjaguin + linear superpos. (LSA) - constant potential
@@ -134,6 +136,8 @@ w_v_kT = w_v/kT; %get in terms of kT
 figure
 hold on
 set(gca,'DefaultLineLineWidth',2)
+ax=gca;
+ax.FontSize = 16;
 plot(h_array_m*1e9,u_array_potential_kT, '-diamond','Color',[0.27,0.3216,1])%, 'MarkerSize', 3)
 plot(h_array_m*1e9,u_array_charge_kT, '-square','Color',[0.9098,0.2275, 0.2275])%, 'MarkerSize', 3)
 
@@ -145,13 +149,13 @@ ttle = title({'Electrostatic double layer interaction energy between two colloid
     strcat('(r = ',num2str(r*1e9),' nm, \psi_0 = ',num2str(psi_0_mV),...
     ' mV, \kappa^{-1} =',num2str(1e9/kappa),' nm)')});
 ttle.FontSize = 12;
-labelsize = 12;
+labelsize = 16;
 xlabel('Surface separation, h (nm)', 'FontSize', labelsize)
 ylabel('Interaction energy (kT)', 'FontSize', labelsize)
 %xlim([0 20])
 %ylim([0 7])
 lgd = legend('Numerical (constant potential)','Numerical (constant charge)',...
-   'Derjaguin + linear superposition approx. (constant potential)','Derjaguin + linear Poisson-Boltzmann approx. (constant potential)','Derjaguin + linear Poisson-Bolzmann (constant charge)');
+   'Derjaguin + linear superposition approx. (constant potential)','Derjaguin + linear Poisson-Boltzmann approx. (constant potential)','Derjaguin + linear Poisson-Boltzmann (constant charge)');
 lgd.FontSize = 12;
 hold off
 
@@ -161,28 +165,30 @@ u_dlvo_potential_kT = u_array_potential_kT+w_v_kT; %for numerical with vdw
 figure
 hold on
 set(gca,'DefaultLineLineWidth',2)
-
+ax=gca;
+ax.FontSize = 16;
 plot(h_array_m*1e9, w_v_kT,'-', h_array_m*1e9,u_array_potential_kT,'-s', h_array_m*1e9, u_dlvo_potential_kT,'-o')
 
 ttle = title({'Numerical DLVO interaction energy (constant potential)',...
     strcat('r = ',num2str(r*1e9),' nm, \psi_0 = ',num2str(psi_0_mV),...
     ' mV, c_0 =',num2str(c_0_molar), ' M, T=', num2str(T), ' K, \kappa^{-1} =',num2str(1e9/kappa),' nm')});
 ttle.FontSize = 12;
-labelsize = 12;
+labelsize = 16;
 xlabel('Surface separation, h (nm)', 'FontSize', labelsize)
 ylabel('Interaction energy (kT)', 'FontSize', labelsize)
 % xlim([0 20])
 % ylim([-6 6])
-lgd = legend('Van der Waals','Electrostatics (calculated)',...
+lgd = legend('van der Waals','Electrostatics (constant potential, numerical)',...
     'Total');
 lgd.FontSize = 12;
 hold off
 
 %% Plot total DLVO (constant charge boundary)
 u_dlvo_charge_kT = u_array_charge_kT+w_v_kT; %for numerical with vdw
-
 figure
 hold on
+ax=gca;
+ax.FontSize = 16;
 set(gca,'DefaultLineLineWidth',2)
 plot(h_array_m*1e9, w_v_kT,'-', h_array_m*1e9,u_array_charge_kT,'-s', h_array_m*1e9, u_dlvo_charge_kT,'-o')
 ttle = title({'Numerical DLVO interaction energy (constant charge)',...
@@ -190,12 +196,12 @@ ttle = title({'Numerical DLVO interaction energy (constant charge)',...
     ' C/m^2, \psi^{isolated}_0\approx',num2str(psi_0_mV),...
     ' mV, c_0 =',num2str(c_0_molar), ' M, T=', num2str(T), ' K, \kappa^{-1} =',num2str(1e9/kappa),' nm')});
 ttle.FontSize = 12;
-labelsize = 12;
+labelsize = 16;
 xlabel('Surface separation, h (nm)', 'FontSize', labelsize)
 ylabel('Interaction energy (kT)', 'FontSize', labelsize)
 % xlim([0 20])
 % ylim([-6 6])
-lgd = legend('Van der Waals','Electrostatics (calculated)',...
+lgd = legend('van der Waals','Electrostatics (constant charge, numerical)',...
     'Total');
 lgd.FontSize = 12;
 hold off
