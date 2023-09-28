@@ -31,4 +31,5 @@ Intermediate functions (at the end of this script)
 - forces_two_spheres_charge
 
 Citation:
+
 Pan, J. A.; Cho, H.; Coropceanu, I.; Wu, H.; Talapin, D. V. Stimuli-Responsive Surface Ligands for Direct Lithography of Functional Inorganic Nanomaterials. Acc. Chem. Res. 2023, 56 (17), 2286-2297. DOI: 10.1021/acs.accounts.3c00226 
